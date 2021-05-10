@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch.nn as nn
 
 
-def generate_snapshots(duration,num_frame,length,n,func):
+def generate_snapshots(duration=1,num_frame=10000,length=1,n=512,func=F):
   snapshots = []
   x=np.linspace(0,length,n)
   for t in np.linspace(0.01,duration,num_frame):
@@ -69,14 +69,17 @@ def test(model, test_loader):
       pdb.set_trace()
   
 
+def load_all_tasks():
+  data=[]
+  for i in range(20):
+    data.append(generate_snapshots(F[i]))
 
-
+  return np.array(data)
 
 if __name__ == '__main__':
   model = Conv1d_Model()
   model.to(device="cuda")
 
-  #### TODO
   #### Prepare 20 tasks of different F. Saving data as (10000,512) arrays
   #### Then load all data as (20,10000,512) arrays
   data = load_all_tasks()
