@@ -9,7 +9,7 @@ class Conv1d_Model(nn.Module):
         self.weights = weights
         self.bias = bias
     
-    # stat with just 1st order derivative?
+    # start with just 1st order derivative?
 
     def forward(self,x, weights_copy=None, bias_copy=None, weights_linear=None, bias_linear=None):
         if weights_copy is not None and bias_copy is not None:

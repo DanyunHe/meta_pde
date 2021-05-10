@@ -7,6 +7,7 @@ class MetaLearner(nn.Module):
         self.predictor = Conv1d_Model
 
         self.self.optimizer = optim.Adam(self.trainable_parameters(), lr=args.meta_learning_rate, amsgrad=False)
+        self.loss=nn.MSELoss()
 
         ## Overall copy of weights and biases
     
@@ -28,8 +29,9 @@ class MetaLearner(nn.Module):
         self.meta_update(loss)
         self.optimizer.zero_grad()
 
-    def run_validation_iter()
-    def run_test_iter()
+    def run_validation_iter():
+
+    def run_test_iter():
 
 
     def meta_update(self, loss):
@@ -56,14 +58,23 @@ class MetaLearner(nn.Module):
                                                                bias_copy=bias_copy)
 
                 ### perform inner loop update
+                final_loss+=support_loss
+                support_loss.backward()
+                self.optimizer.step()
                 ## update weights_copy, bias_copy
 
 
             ### Collect final loss for meta update
+            meta_update(final_loss)
+
     def net_forward(x, y, weights, bias):
         alpha = self.predictor.forward(x=x,weights_copy=weights, bias_copy = bias)
 
         ##rollout(alpha)
-        preds = ...
-        loss = ...
+
+        preds = alpha@x
+        loss = loss(preds,y)
         return losss, preds
+
+
+
