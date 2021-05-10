@@ -3,30 +3,35 @@ import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn as nn
+from equations import generate_equations
 
 
-def generate_snapshots(duration=1,num_frame=10000,length=1,n=512,func=F):
+def F1(x,t):
+  return np.sin(2*x)*np.sin(np.sin(200*x**(1.2)))
+
+def F2(x,t):
+  return np.sin(2*x)*np.sin(np.sin(x**(1.3)))
+
+def F3(x,t):
+  return np.sin(20*x)*np.sin(np.sin(5*x**(0.9)))
+
+def generate_snapshots(duration=1,num_frame=10000,length=1,n=512,func=F1):
   snapshots = []
   x=np.linspace(0,length,n)
   for t in np.linspace(0.01,duration,num_frame):
-    snapshots.append(func(x+t))
+    snapshots.append(func(x,t))
   snapshots = np.array(snapshots)
   return snapshots
 
-def F1(x):
-  return np.sin(2*x)*np.sin(np.sin(200*x**(1.2)))
-
-def F2(x):
-  return np.sin(2*x)*np.sin(np.sin(x**(1.3)))
-
-def F3(x):
-  return np.sin(20*x)*np.sin(np.sin(5*x**(0.9)))
-
 def train(model,train_loader, optimizer, epoch):
+  
   model.train()
   #### TODO copy weights from self.weights
   #### Other copies the same
-  weights_copy = []
+  weights_copy=model.weights2
+  bias_copy=model.bias_copy
+  weights_linear_copy=model.weights_linear_copy
+
   
   ## train loader should give me like 5 examples from A task
 
@@ -44,13 +49,17 @@ def train(model,train_loader, optimizer, epoch):
       data_input, target = data_input.cuda(),target.cuda()
       output = model.forward(data_input, weights_copy=weights_copy, bias_copy=bias_copy, weights_linear_copy=weights_linear_copy, bias_linear_copy=bias_linear_copy)
       loss = nn.MSELoss(reduction='sum')(output, target.reshape(-1,480))
-      #### TODO
-      # grads = nn.grad(loss, parameter) ## for each parameter
-      # parameter -= inner_loop_lr * grads
+      #### inner loop update
+      grads = nn.grad(loss, weights_copy) ## for each parameter
+      weights_copy -= inner_loop_lr * grads
+      grads = nn.grad(loss, bias_copy) ## for each parameter
+      bias_copy -= inner_loop_lr * grads
+      grads = nn.grad(loss, weights_linear_copy) ## for each parameter
+      weights_linear_copy -= inner_loop_lr * grads
 
 
     optimizer.zero_grad()
-    loss = nn.MSELoss(reduction='sum')(output, target.reshape(-1,480))
+    # loss = nn.MSELoss(reduction='sum')(output, target.reshape(-1,480))
     loss.backward()
     optimizer.step()
   print(loss)
@@ -72,7 +81,9 @@ def test(model, test_loader):
 def load_all_tasks():
   data=[]
   for i in range(20):
-    data.append(generate_snapshots(F[i]))
+    F=generate_equations(i)
+    print(F(1,1))
+    data.append(generate_snapshots(func=F))
 
   return np.array(data)
 

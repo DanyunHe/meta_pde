@@ -10,7 +10,7 @@ class Conv1d_Model(nn.Module):
         in_channels = 32
         num_filters = 32
         kernel_size = 5
-        self.weights = [nn.Parameter(torch.empty(32,1, kernel_size).double().cuda()),
+        self.weights2 = [nn.Parameter(torch.empty(32,1, kernel_size).double().cuda()),
         nn.Parameter(torch.empty(32, 32, kernel_size).double().cuda()),
         nn.Parameter(torch.empty(32, 32, kernel_size).double().cuda())]
         [nn.init.xavier_uniform_(weight) for weight in self.weights]
