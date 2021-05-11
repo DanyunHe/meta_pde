@@ -59,8 +59,9 @@ def train(model,train_loader, optimizer, epoch):
       print(grads)
       print("weights")
       print(weights_copy)
+      #weights_copy-=grads*0.01
       #grads = nn.grad(loss, weights_copy) ## for each parameter
-
+    
       weights_copy =[w-torch.mul(g, inner_loop_lr) for w,g in zip(weights_copy,grads)] 
       print("new weights")
       print(weights_copy)
