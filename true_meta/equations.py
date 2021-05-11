@@ -12,4 +12,4 @@ def F3(x,t):
 def generate_equations(idx):
 	a=idx
 	b=idx*0.5
-	return lambda x,t : np.sin(a*(x-t))*np.sin(np.sin(b*(x-t)**(0.9)))
+	return lambda x,t : np.sin(a*(x-t))*np.sin(np.sin(b*(x-t)**(2)))

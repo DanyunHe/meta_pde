@@ -29,8 +29,9 @@ def train(model,train_loader, optimizer, epoch):
   #### TODO copy weights from self.weights
   #### Other copies the same
   weights_copy=model.weights2
-  bias_copy=model.bias_copy
-  weights_linear_copy=model.weights_linear_copy
+  bias_copy=model.bias
+  weights_linear_copy=model.weights_linear
+  bias_linear_copy=model.bias_linear
 
   
   ## train loader should give me like 5 examples from A task
@@ -40,22 +41,35 @@ def train(model,train_loader, optimizer, epoch):
   ##    do inner update
   ##    xxx
   ## obtain the final loss and .backward and optimizer.step()
-  import pdb
-  pdb.set_trace()
+  #import pdb
+  #pdb.set_trace()
+  inner_loop_lr=0.01
   for data in train_loader: ## only 1 batch
-    for num_steps in range(10): ##  inner steps = 10
+    for num_steps in range(10):
+      print(num_steps)
       data_input = data.reshape(-1,32,16)[:,:,:1].reshape(-1,1,32)
       target = data.reshape(-1,32,16)[:,:,1:]
       data_input, target = data_input.cuda(),target.cuda()
       output = model.forward(data_input, weights_copy=weights_copy, bias_copy=bias_copy, weights_linear_copy=weights_linear_copy, bias_linear_copy=bias_linear_copy)
       loss = nn.MSELoss(reduction='sum')(output, target.reshape(-1,480))
       #### inner loop update
-      grads = nn.grad(loss, weights_copy) ## for each parameter
-      weights_copy -= inner_loop_lr * grads
-      grads = nn.grad(loss, bias_copy) ## for each parameter
-      bias_copy -= inner_loop_lr * grads
-      grads = nn.grad(loss, weights_linear_copy) ## for each parameter
-      weights_linear_copy -= inner_loop_lr * grads
+      # compute gradient 
+      #loss.backward()
+      grads=torch.autograd.grad(loss,weights_copy,retain_graph=True)
+      print(grads)
+      print("weights")
+      print(weights_copy)
+      #grads = nn.grad(loss, weights_copy) ## for each parameter
+
+      weights_copy =[w-torch.mul(g, inner_loop_lr) for w,g in zip(weights_copy,grads)] 
+      print("new weights")
+      print(weights_copy)
+      grads = torch.autograd.grad(loss, bias_copy,retain_graph=True) 
+      bias_copy = [w-torch.mul(g, inner_loop_lr) for w,g in zip(bias_copy,grads)]
+      grads = torch.autograd.grad(loss, weights_linear_copy,retain_graph=True) ## for each parameter
+      weights_linear_copy = [w-torch.mul(g, inner_loop_lr) for w,g in zip(weights_linear_copy,grads)]
+      grads = torch.autograd.grad(loss,bias_linear_copy)
+      bias_linear_copy=[w-torch.mul(g,inner_loop_lr) for w,g in zip(bias_linear_copy,grads)]
 
 
     optimizer.zero_grad()

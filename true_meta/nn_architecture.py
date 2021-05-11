@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class Conv1d_Model(nn.Module):
     def __init__(self):
-        super(Conv1d_Model, self).__init__()
+        super(Conv1d_Model,self).__init__()
         self.num_conv_layes = 3
         in_channels = 32
         num_filters = 32
@@ -13,7 +13,7 @@ class Conv1d_Model(nn.Module):
         self.weights2 = [nn.Parameter(torch.empty(32,1, kernel_size).double().cuda()),
         nn.Parameter(torch.empty(32, 32, kernel_size).double().cuda()),
         nn.Parameter(torch.empty(32, 32, kernel_size).double().cuda())]
-        [nn.init.xavier_uniform_(weight) for weight in self.weights]
+        [nn.init.xavier_uniform_(weight) for weight in self.weights2]
         self.bias = [nn.Parameter(torch.zeros(num_filters).double().cuda()),
          nn.Parameter(torch.zeros(num_filters).double().cuda()), 
          nn.Parameter(torch.zeros(num_filters).double().cuda())]
@@ -28,10 +28,10 @@ class Conv1d_Model(nn.Module):
                 x = F.conv1d(x, weight = weights_copy[i], bias = bias_copy[i])
                 x = F.relu(x)
             x = torch.flatten(x,1)
-            out = F.linear(x, weight = weight_linear_copy, bias = bias_linear_copy)
+            out = F.linear(x, weight = weights_linear_copy, bias = bias_linear_copy)
         else:
             for i in range(self.num_conv_layes):
-                x = F.conv1d(x, weight = self.weights[i], bias = self.bias[i])
+                x = F.conv1d(x, weight = self.weights2[i], bias = self.bias[i])
                 x = F.relu(x)
             x = torch.flatten(x,1)
             # import pdb
