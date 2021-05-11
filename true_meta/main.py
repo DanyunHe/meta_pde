@@ -44,40 +44,35 @@ def train(model,train_loader, optimizer, epoch):
   #import pdb
   #pdb.set_trace()
   inner_loop_lr=0.01
-  for data in train_loader: ## only 1 batch
+  for it,data in enumerate(train_loader): ## only 1 batch
     for num_steps in range(10):
-      print(num_steps)
       data_input = data.reshape(-1,32,16)[:,:,:1].reshape(-1,1,32)
       target = data.reshape(-1,32,16)[:,:,1:]
       data_input, target = data_input.cuda(),target.cuda()
       output = model.forward(data_input, weights_copy=weights_copy, bias_copy=bias_copy, weights_linear_copy=weights_linear_copy, bias_linear_copy=bias_linear_copy)
-      loss = nn.MSELoss(reduction='sum')(output, target.reshape(-1,480))
+      loss = nn.MSELoss(reduction='mean')(output, target.reshape(-1,480))
       #### inner loop update
-      # compute gradient 
-      #loss.backward()
-      grads=torch.autograd.grad(loss,weights_copy,retain_graph=True)
-      print(grads)
-      print("weights")
-      print(weights_copy)
-      #weights_copy-=grads*0.01
-      #grads = nn.grad(loss, weights_copy) ## for each parameter
-    
-      weights_copy =[w-torch.mul(g, inner_loop_lr) for w,g in zip(weights_copy,grads)] 
-      print("new weights")
-      print(weights_copy)
-      grads = torch.autograd.grad(loss, bias_copy,retain_graph=True) 
-      bias_copy = [w-torch.mul(g, inner_loop_lr) for w,g in zip(bias_copy,grads)]
-      grads = torch.autograd.grad(loss, weights_linear_copy,retain_graph=True) ## for each parameter
-      weights_linear_copy = [w-torch.mul(g, inner_loop_lr) for w,g in zip(weights_linear_copy,grads)]
-      grads = torch.autograd.grad(loss,bias_linear_copy)
-      bias_linear_copy=[w-torch.mul(g,inner_loop_lr) for w,g in zip(bias_linear_copy,grads)]
+      create_g=False
+      retain_g=True
+      grads=torch.autograd.grad(loss,weights_copy,create_graph=create_g,retain_graph=retain_g)
+      for w,g in zip(weights_copy,grads):
+          w=w-inner_loop_lr*g
+      grads = torch.autograd.grad(loss, bias_copy,create_graph=create_g,retain_graph=retain_g) 
+      for w,g in zip(bias_copy,grads):
+          w=w-inner_loop_lr*g
+      grads = torch.autograd.grad(loss, weights_linear_copy,create_graph=create_g,retain_graph=retain_g) ## for each parameter
+      for w,g in zip(weights_linear_copy,grads):
+          w=w-inner_loop_lr*g
+      grads = torch.autograd.grad(loss,bias_linear_copy,create_graph=create_g, retain_graph=retain_g)
+      for w,g in zip(bias_linear_copy,grads):
+          w=w-inner_loop_lr*g
 
 
     optimizer.zero_grad()
     # loss = nn.MSELoss(reduction='sum')(output, target.reshape(-1,480))
     loss.backward()
     optimizer.step()
-  print(loss)
+    return loss.detach().cpu().numpy()
 
 
 def test(model, test_loader):
@@ -87,10 +82,13 @@ def test(model, test_loader):
       data_input = data.reshape(-1,32,16)[:,:,:1].reshape(-1,1,32)
       target = data.reshape(-1,32,16)[:,:,1:]
       data_input, target = data_input.cuda(),target.cuda()
+      prediction=model(data_input)
       np.savetxt('prediction_test',model(data_input).cpu())
       np.savetxt('./test_data',data.reshape(32,-1))
-      import pdb
-      pdb.set_trace()
+      #import pdb
+      #pdb.set_trace()
+      loss = nn.MSELoss(reduction='mean')(prediction, target.reshape(-1,480))
+      return loss.cpu().numpy()
   
 
 def load_all_tasks():
@@ -123,19 +121,22 @@ if __name__ == '__main__':
   # train_loader = torch.utils.data.DataLoader(data[select_train], **train_kwargs)
   # test_loader = torch.utils.data.DataLoader(data[select_test], **test_kwargs)
 
-  for step in range(1, 1001):
+  for step in range(1, 5001):
     #### Use step instead of epoch. No well-defined epoch.
-    sample_train_task = np.random.choice(range(20)) # select a task out of 20 available tasks
+    sample_train_task = np.random.choice(range(18)) # select a task out of 20 available tasks
     ## for each task, sample 10 or more snapshots 
     sample_train_snapshot = np.random.choice(10000,10)
     train_data = data[sample_train_task][sample_train_snapshot]
     train_loader = torch.utils.data.DataLoader(train_data, **train_kwargs)
-    train(model, train_loader, optimizer, step)
-  
-  for step in range(1,101):
-    #### TODO test similar as train
-    sample_test_task = np.random.choice(range(2)) # let's say there are two test tasks
-    test(model, test_loader)
+    loss=train(model, train_loader, optimizer, step)
+    if step%100==0:
+        sample_test_task = 18+np.random.choice(range(2)) # select a task out of 20 available tasks
+        sample_test_snapshot = np.random.choice(10000,10)
+        test_data = data[sample_test_task][sample_test_snapshot]
+        test_loader = torch.utils.data.DataLoader(test_data, **test_kwargs)
+        test_loss=test(model, test_loader)
+        print("step: ",step,"train loss ",loss,"test loss: ",test_loss)
+
 
   # meta_system = ExperimentBuilder(model=model,data=data)
   # meta_system.run_experiment()
