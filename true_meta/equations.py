@@ -10,6 +10,8 @@ def F3(x,t):
   return np.sin(20*x)*np.sin(np.sin(5*x**(0.9)))
 
 def generate_equations(idx):
-	a=idx
-	b=idx*0.5
-	return lambda x,t : np.sin(a*(x-t))*np.sin(np.sin(b*(x-t)**(2)))
+  np.random.seed(idx)
+  a=idx
+  b=idx*0.5
+  # c=np.random.rand()*4
+  return lambda x,t : np.sin(a*(x-t))*np.sin(np.sin(b*(x-t)**(2)))
