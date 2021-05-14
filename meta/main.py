@@ -6,16 +6,7 @@ import torch.nn as nn
 from equations import generate_equations
 from copy import deepcopy
 
-
-def F1(x,t):
-  return np.sin(2*x)*np.sin(np.sin(200*x**(1.2)))
-
-def F2(x,t):
-  return np.sin(2*x)*np.sin(np.sin(x**(1.3)))
-
-def F3(x,t):
-  return np.sin(20*x)*np.sin(np.sin(5*x**(0.9)))
-
+# Generate snapshots of PDE solutions for training 
 def generate_snapshots(duration=1,num_frame=10000,length=1,n=512,func=F1):
   snapshots = []
   x=np.linspace(0,length,n)
@@ -38,13 +29,14 @@ def get_inner_loop_parameter_dict(params):
 
         return param_dict
 
+# Update inner loop parameters 
 def update_inner_params(names_weights_dict, names_grads_wrt_params_dict, inner_loop_lr):
   updated_names_weights_dict = dict()
   for key in names_grads_wrt_params_dict.keys():
     updated_names_weights_dict[key] = names_weights_dict[key] - inner_loop_lr *  names_grads_wrt_params_dict[key]
   return updated_names_weights_dict
 
-
+# Calculate loss 
 def _l2_loss(adapted, prior):
     loss = nn.MSELoss(reduction='mean')
     l2_term = 0.
@@ -52,6 +44,7 @@ def _l2_loss(adapted, prior):
         l2_term += loss(adapted[key],prior[key])
     return l2_term
 
+# Do inner loop update 
 def apply_inner_loop_update(loss, names_weights_copy, names_weights_copy_org, inner_loop_lr):
   loss+=_l2_loss(names_weights_copy, names_weights_copy_org)*0.4
   model.zero_grad(params = names_weights_copy)
@@ -78,7 +71,7 @@ def apply_inner_loop_update(loss, names_weights_copy, names_weights_copy_org, in
   return names_weights_copy
 
 
-
+# Model training 
 def train(model, task_train_data, task_test_data, optimizer, epoch, n_inner_step=10):
   
   model.train()
@@ -129,7 +122,7 @@ def train(model, task_train_data, task_test_data, optimizer, epoch, n_inner_step
   # print(test_loss)
   return test_loss.detach().cpu().numpy()
 
-
+# Model testing 
 def test(model, task_train_data, task_test_data, n_inner_step=10):
   model.eval()
   
@@ -179,7 +172,7 @@ def test(model, task_train_data, task_test_data, n_inner_step=10):
   # loss = nn.MSELoss(reduction='mean')(prediction, target.reshape(-1,480))
   return test_loss.cpu().numpy()
   
-
+# Generate n different tasks 
 def load_all_tasks(n_task):
   data=[]
   for i in range(n_task):

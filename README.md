@@ -1,1 +1,1 @@
-Code for AM225 final project.
+Code for AM225 final project. Run meta/main.py to reproduce the results.

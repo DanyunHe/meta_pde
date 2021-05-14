@@ -9,6 +9,7 @@ def F2(x,t):
 def F3(x,t):
   return np.sin(20*x)*np.sin(np.sin(5*x**(0.9)))
 
+# Generate diffenert equations 
 def generate_equations(idx):
   np.random.seed(idx)
   a=idx
